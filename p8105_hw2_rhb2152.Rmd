@@ -5,3 +5,118 @@ date: "`r Sys.Date()`"
 output: github_document
 ---
 
+# Problem 1
+
+The code below is used to read the NYC Transit data and saves it into the `nyc_df` data frame. The cleaned dataset contains information on the NYC subway, with variables on the line name, the station name, station latitude, station longitude, routes served, what the entrance type is, whether there is an entry, whether there is vending service, and whether it is ADA compliant.
+
+The code chunk below starts to clean the data by re-writing the variable names in a uniform convention, selecting the variables of interest, and converting the `entry` and `vending` variables to the logical type.
+
+The resulting dataset contains 1868 rows and 19 columns.
+
+The data frame currently is not completely tidy since the routes served are represented across many columns, which should instead be condensed into one "title" column and one "value" column, representing this information.
+
+```{r, message=FALSE}
+library(tidyverse)
+
+nyc_df = 
+  
+  read_csv(file = "data/nyc.csv") |>
+  
+  janitor::clean_names() |>
+  
+  select(line:entry, vending, ada) |>
+  
+  mutate(
+    entry = case_match(entry, "YES"~1, "NO"~0),
+    vending = case_match(vending, "YES"~1, "NO"~0)) |>
+  
+  mutate(
+    entry = as.logical(entry),
+    vending = as.logical(vending),
+    route8 = as.character(route8),
+    route9 = as.character(route9),
+    route10 = as.character(route10),
+    route11 = as.character(route11),
+    )
+
+nyc_df
+
+```
+
+The code below selects both the `line` and `station_name` variables and counts the number of distinct observations. There are **465 distinct stations**.
+
+```{r}
+
+select(nyc_df, line, station_name) |>
+  distinct() |>
+  nrow()
+```
+
+The chunk below repeats the same process as before, but includes the `ada` variable. The data is then filtered to include only ADA compliant stations, and counts the distinct observations. There are **84 ADA compliant stations**.
+
+```{r}
+select(nyc_df, line, station_name, ada) |>
+  filter(ada == TRUE) |>
+  distinct() |>
+  nrow()
+```
+
+The new chunk again repeats the similar process, but now includes `entry` and `vending` variables. The data is filtered such that `vending` is false, and `entry` is true, and the number of distinct observations are counted. There are 43 stations that meet this criteria. Since there are a total of 465 stations, the **proportion that meet this criteria is `r round(43/465,2)`**.
+
+```{r}
+select(nyc_df, line, station_name, entry, vending) |>
+  filter(vending == FALSE, entry == TRUE) |>
+  distinct() |>
+  nrow()
+```
+
+The code below tidies the data frame such that route number and route name are distinct variables.
+
+```{r}
+
+nyc_tidy_df = 
+  pivot_longer(
+    nyc_df,
+    route1:route11,
+    names_to = "route_number",
+    names_prefix = "route",
+    values_to = "route_name")
+
+nyc_tidy_df = drop_na(nyc_tidy_df, route_name)
+
+nyc_tidy_df
+
+```
+
+Using the code below, there are **60 distinct stations that serve the A train**.
+
+```{r}
+
+select(nyc_tidy_df, line, station_name, route_name) |>
+  filter(route_name == "A") |>
+  distinct() |>
+  nrow()
+
+```
+
+Using the code below, of the stations that serve the A train, **17 are ADA compliant**.
+
+```{r}
+select(nyc_tidy_df, line, station_name, route_name, ada) |>
+  filter(route_name == "A", ada == "TRUE") |>
+  distinct() |>
+  nrow()
+```
+
+# Problem 2
+
+
+
+
+
+
+# Problem 3
+
+
+
+
